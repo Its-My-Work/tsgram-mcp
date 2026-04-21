@@ -30,6 +30,8 @@ const DEFAULT_FILE_EDITS = process.env.ALLOW_FILE_EDITS === 'true'
 const AVAILABLE_MODEL = ChatModel.getAvailableModel()
 const AI_API = AVAILABLE_MODEL ? ChatModel.createAPI(AVAILABLE_MODEL) : null
 
+console.log('🤖 AI Initialization:', { AVAILABLE_MODEL, hasAI: !!AI_API, envDeepSeek: !!process.env.DEEPSEEK_API_KEY, envOpenRouter: !!process.env.OPENROUTER_API_KEY })
+
 interface BotInstance {
   id: string
   name: string
