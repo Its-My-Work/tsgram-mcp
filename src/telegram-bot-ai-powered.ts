@@ -17,15 +17,18 @@ import dotenv from 'dotenv'
 import axios from 'axios'
 import { TSGramConfigManager } from './utils/tsgram-config.js'
 import { SyncSafetyManager } from './utils/sync-safety.js'
+import { ChatModel } from './models/ChatModel.js'
 
 dotenv.config()
 
 const WORKSPACE_PATH = process.env.WORKSPACE_PATH || '/app/workspaces/tsgram'
 // Authorization now uses AUTHORIZED_CHAT_ID only (more secure than usernames)
 const AUTHORIZED_CHAT_ID = process.env.AUTHORIZED_CHAT_ID ? parseInt(process.env.AUTHORIZED_CHAT_ID) : null
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY
-const OPENROUTER_MODEL = 'anthropic/claude-3.5-sonnet'
 const DEFAULT_FILE_EDITS = process.env.ALLOW_FILE_EDITS === 'true'
+
+// Get available AI model (priority: deepseek > openrouter > openai)
+const AVAILABLE_MODEL = ChatModel.getAvailableModel()
+const AI_API = AVAILABLE_MODEL ? ChatModel.createAPI(AVAILABLE_MODEL) : null
 
 interface BotInstance {
   id: string
@@ -87,8 +90,8 @@ class AIPoweredTelegramBot {
         status: 'healthy',
         service: 'ai-powered-telegram-bot',
         timestamp: new Date().toISOString(),
-        ai_model: OPENROUTER_MODEL,
-        has_api_key: !!OPENROUTER_API_KEY,
+        ai_model: AVAILABLE_MODEL || 'none',
+        has_api_key: !!AI_API,
         file_edits_enabled: this.fileEditsEnabled
       })
     })
@@ -142,8 +145,8 @@ class AIPoweredTelegramBot {
       return
     }
 
-    if (!OPENROUTER_API_KEY) {
-      console.error('⚠️ No OPENROUTER_API_KEY found - AI features will be limited')
+    if (!AI_API) {
+      console.error('⚠️ No AI API key found (OPENROUTER_API_KEY or DEEPSEEK_API_KEY) - AI features will be limited')
     }
 
     const botConfig: BotConfig = {
@@ -401,8 +404,8 @@ ALWAYS:
 ${context.lastFile ? `Last file accessed: ${context.lastFile}` : ''}
 ${context.lastCommand ? `Last command: ${context.lastCommand}` : ''}`
 
-      // Call OpenRouter API
-      const response = await this.callOpenRouter(systemPrompt, userMessage)
+      // Call AI API
+      const response = await this.callAI(systemPrompt, userMessage)
       
       // Process AI response and execute commands
       await this.processAIResponse(chatId, response, context)
@@ -425,32 +428,15 @@ ${context.lastCommand ? `Last command: ${context.lastCommand}` : ''}`
     }
   }
 
-  private async callOpenRouter(systemPrompt: string, userMessage: string): Promise<string> {
-    if (!OPENROUTER_API_KEY) {
-      return 'I need an OpenRouter API key to use AI features. Please set OPENROUTER_API_KEY in your environment.'
+  private async callAI(systemPrompt: string, userMessage: string): Promise<string> {
+    if (!AI_API) {
+      return 'I need an OpenRouter API key or DeepSeek API key to use AI features. Please set OPENROUTER_API_KEY or DEEPSEEK_API_KEY in your environment.'
     }
 
     try {
-      const response = await axios.post('https://openrouter.ai/api/v1/chat/completions', {
-        model: OPENROUTER_MODEL,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userMessage }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
-      }, {
-        headers: {
-          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://github.com/yourusername/tsgram',
-          'X-Title': 'Telegram AI Bot'
-        }
-      })
-
-      return response.data.choices[0].message.content
+      return await AI_API.send(systemPrompt, userMessage)
     } catch (error: any) {
-      console.error('OpenRouter API Error:', error.response?.data || error.message)
+      console.error('AI API Error:', error.response?.data || error.message)
       throw error
     }
   }
@@ -867,7 +853,7 @@ ${rawOutput}
 
 Provide a helpful explanation or insights about this output. If it's a file listing, describe what the files might be for. If it's file content, explain what it does or highlight important parts. Keep your response concise and helpful for a Telegram chat context.`
       
-      const enhanced = await this.callOpenRouter(
+      const enhanced = await this.callAI(
         'You are a helpful assistant that explains command outputs in a clear, concise way.',
         prompt
       )

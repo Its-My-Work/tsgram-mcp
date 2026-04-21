@@ -19,9 +19,9 @@ export class DeepSeekAPI implements AIModelAPI {
     this.maxTokens = config.maxTokens || 1024;
   }
 
-  async send(text: string): Promise<string> {
-    const newMessage: ChatMessage = { role: 'user', content: text };
-    this.history.append(newMessage);
+  async send(systemPrompt: string, userMessage: string): Promise<string> {
+    this.history.append({ role: 'system', content: systemPrompt });
+    this.history.append({ role: 'user', content: userMessage });
 
     try {
       const response = await this.client.chat.completions.create({

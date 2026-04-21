@@ -34,9 +34,15 @@ async function main() {
   console.log('🚀 Starting TSGram MCP System...');
   
   // Check required environment variables
-  const requiredVars = ['TELEGRAM_BOT_TOKEN', 'OPENROUTER_API_KEY'];
-  const missing = requiredVars.filter(v => !process.env[v]);
-  
+  const hasBotToken = !!process.env.TELEGRAM_BOT_TOKEN;
+  const hasOpenRouterKey = !!process.env.OPENROUTER_API_KEY;
+  const hasDeepSeekKey = !!process.env.DEEPSEEK_API_KEY;
+  const hasAnyAIKey = hasOpenRouterKey || hasDeepSeekKey;
+
+  const missing = [];
+  if (!hasBotToken) missing.push('TELEGRAM_BOT_TOKEN');
+  if (!hasAnyAIKey) missing.push('OPENROUTER_API_KEY or DEEPSEEK_API_KEY');
+
   if (missing.length > 0) {
     console.error('❌ Missing required environment variables:', missing.join(', '));
     console.log('💡 Tip: The Docker system is already running. Use these commands instead:');

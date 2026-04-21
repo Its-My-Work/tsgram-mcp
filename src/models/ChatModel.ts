@@ -80,6 +80,15 @@ export class ChatModel implements AIModelConfig {
           maxTokens: parseInt(process.env.MAX_TOKENS || '1024'),
         });
 
+      case 'deepseek':
+        return new DeepSeekAPI({
+          apiKey: process.env.DEEPSEEK_API_KEY || '',
+          apiBase: process.env.DEEPSEEK_API_BASE,
+          model: process.env.DEEPSEEK_MODEL,
+          maxHistory: parseInt(process.env.MAX_HISTORY || '5'),
+          maxTokens: parseInt(process.env.MAX_TOKENS || '1024'),
+        });
+
       default:
         throw new Error(`Unknown model: ${model}`);
     }
@@ -89,12 +98,28 @@ export class ChatModel implements AIModelConfig {
     return [...SUPPORTED_MODELS];
   }
 
+  static getAvailableModel(): ModelType | null {
+    // Priority: deepseek > openrouter > openai
+    if (this.hasAPIKey('deepseek')) {
+      return 'deepseek';
+    }
+    if (this.hasAPIKey('openrouter')) {
+      return 'openrouter';
+    }
+    if (this.hasAPIKey('openai')) {
+      return 'openai';
+    }
+    return null;
+  }
+
   static hasAPIKey(model: ModelType): boolean {
     switch (model) {
       case 'openai':
         return !!(process.env.OPENAI_API_KEY);
       case 'openrouter':
         return !!(process.env.OPENROUTER_API_KEY);
+      case 'deepseek':
+        return !!(process.env.DEEPSEEK_API_KEY);
       default:
         return false;
     }

@@ -14,7 +14,7 @@ export interface AIModelConfig {
 }
 
 export interface AIModelAPI {
-  send(text: string): Promise<string>;
+  send(systemPrompt: string, userMessage: string): Promise<string>;
 }
 
 export interface OpenAIConfig {
