@@ -33,9 +33,17 @@ export interface OpenRouterConfig {
   maxTokens?: number;
 }
 
-export type ModelType = 'openai' | 'openrouter';
+export interface DeepSeekConfig {
+  apiKey: string;
+  apiBase?: string;
+  model?: string;
+  maxHistory?: number;
+  maxTokens?: number;
+}
 
-export const SUPPORTED_MODELS: ModelType[] = ['openai', 'openrouter'];
+export type ModelType = 'openai' | 'openrouter' | 'deepseek';
+
+export const SUPPORTED_MODELS: ModelType[] = ['openai', 'openrouter', 'deepseek'];
 
 export interface SignalMessage {
   getBody(): string;

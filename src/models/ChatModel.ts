@@ -1,6 +1,7 @@
 import { ModelType, SUPPORTED_MODELS, AIModelAPI, AIModelConfig } from '../types/index.js';
 import { OpenAIAPI } from './OpenAIAPI.js';
 import { OpenRouterAPI } from './OpenRouterAPI.js';
+import { DeepSeekAPI } from './DeepSeekAPI.js';
 
 export class ChatModel implements AIModelConfig {
   public readonly model: string;
@@ -33,6 +34,15 @@ export class ChatModel implements AIModelConfig {
           apiKey: process.env.OPENROUTER_API_KEY || '',
           apiBase: process.env.OPENROUTER_API_BASE,
           model: process.env.OPENROUTER_MODEL,
+          maxHistory: parseInt(process.env.MAX_HISTORY || '5'),
+          maxTokens: parseInt(process.env.MAX_TOKENS || '1024'),
+        });
+
+      case 'deepseek':
+        return new DeepSeekAPI({
+          apiKey: process.env.DEEPSEEK_API_KEY || '',
+          apiBase: process.env.DEEPSEEK_API_BASE,
+          model: process.env.DEEPSEEK_MODEL,
           maxHistory: parseInt(process.env.MAX_HISTORY || '5'),
           maxTokens: parseInt(process.env.MAX_TOKENS || '1024'),
         });
